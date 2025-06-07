@@ -1,0 +1,16 @@
+name: BullScheduler
+
+services:
+  bull-scheduler-redis:
+    image: redis:6-alpine
+    ports:
+      - '6379:6379'
+
+  bull-scheduler-api:
+    build: .
+    ports:
+      - '3001:3001'
+    depends_on:
+      - bull-scheduler-redis
+    env_file:
+      - .env
