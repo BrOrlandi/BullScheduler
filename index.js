@@ -28,7 +28,7 @@ const redisConnection = new IORedis({
 const queue = new Queue(queueName, { connection: redisConnection });
 
 app.post('/job', async (req, res) => {
-  const { name, executeAt, delayMs, data } = req.body;
+  const { name, executeAt, delayMs, data, webhook_url } = req.body;
 
   if (!data) return res.status(400).json({ error: 'Missing data' });
 
@@ -43,6 +43,7 @@ app.post('/job', async (req, res) => {
         _name: name,
         _metadata: { executeAt, delayMs },
         data,
+        webhook_url,
       },
       {
         delay,
@@ -61,9 +62,11 @@ app.post('/job', async (req, res) => {
 const worker = new Worker(
   queueName,
   async (job) => {
-    const url = JOBS_WEBHOOK_URL;
+    // job.data contains { _name, _metadata, data, webhook_url }
+    const { webhook_url, data } = job.data; // Extract webhook_url and the original data
+    const targetUrl = webhook_url || JOBS_WEBHOOK_URL; // Use job-specific URL or fallback to global
     try {
-      const response = await axios.post(url, job.data);
+      const response = await axios.post(targetUrl, data); // Send only actualJobData
       console.log(
         'Job executed:',
         job.id,
@@ -75,7 +78,7 @@ const worker = new Worker(
 
       return response.data;
     } catch (err) {
-      console.error('Failed to send job to webhook:', err.message);
+      console.error('Failed to send job to webhook for job', job.id, 'using url', targetUrl, 'error:', err.message);
     }
   },
   { connection: redisConnection }
