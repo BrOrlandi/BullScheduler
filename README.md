@@ -1,3 +1,5 @@
+![BullScheduler Logo](logo.png)
+
 # BullScheduler
 
 A lightweight job scheduling service built with Node.js, Express, and BullMQ. Schedule jobs to execute at specific times or after delays, with automatic webhook delivery when jobs complete.
