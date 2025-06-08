@@ -16,6 +16,6 @@ services:
       REDIS_HOST: bull-scheduler-redis
       REDIS_PORT: 6379
       PORT: 3001
-      JOBS_WEBHOOK_URL: ''
+      JOBS_WEBHOOK_URL: 'http://your-webhook-url.com'
     env_file:
       - .env
