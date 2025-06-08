@@ -30,3 +30,10 @@ A lightweight job scheduling service built with Node.js, Express, and BullMQ. Th
    ```
 
 3. Monitor jobs at `http://localhost:3000/admin`
+
+## Environment Variables
+
+- `REDIS_HOST`: The hostname or IP address of the Redis server.
+- `REDIS_PORT`: The port number on which the Redis server is listening.
+- `PORT`: The port number for the `bull-scheduler` service.
+- `JOBS_WEBHOOK_URL`: The URL to which job data will be sent upon execution.
