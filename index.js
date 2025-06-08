@@ -43,7 +43,7 @@ const authenticateToken = (req, res, next) => {
 };
 
 app.post('/job', authenticateToken, async (req, res) => {
-  const { name, executeAt, delayMs, data } = req.body;
+  const { name, executeAt, delayMs, data, webhookUrl } = req.body;
 
   if (!data) return res.status(400).json({ error: 'Missing data' });
 
@@ -57,6 +57,7 @@ app.post('/job', authenticateToken, async (req, res) => {
       {
         _name: name,
         _metadata: { executeAt, delayMs },
+        _webhookUrl: webhookUrl,
         data,
       },
       {
@@ -76,9 +77,11 @@ app.post('/job', authenticateToken, async (req, res) => {
 const worker = new Worker(
   queueName,
   async (job) => {
-    const url = JOBS_WEBHOOK_URL;
+    // job.data contains { _name, _metadata, data, _webhookUrl }
+    const { _webhookUrl, data } = job.data; // Extract webhookUrl and the original data
+    const targetUrl = _webhookUrl || JOBS_WEBHOOK_URL; // Use job-specific URL or fallback to global
     try {
-      const response = await axios.post(url, job.data);
+      const response = await axios.post(targetUrl, data); // Send only actualJobData
       console.log(
         'Job executed:',
         job.id,
@@ -90,7 +93,9 @@ const worker = new Worker(
 
       return response.data;
     } catch (err) {
-      console.error('Failed to send job to webhook:', err.message);
+      throw new Error(
+        `Failed to send job to webhook for job ${job.id} using url ${targetUrl} error: ${err.message}`
+      );
     }
   },
   { connection: redisConnection }
