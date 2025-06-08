@@ -33,9 +33,10 @@ A lightweight job scheduling service built with Node.js, Express, and BullMQ. Th
 
 ## Environment Variable Configuration
 
-Environment variables can be configured for the `bull-scheduler-api` service. The primary way to set these for Docker Compose is via the `environment` block in the `docker-compose.yml` file or by creating a `.env` file in the root of the project.
+Environment variables can be configured for the `bull-scheduler` service. The primary way to set these for Docker Compose is via the `environment` block in the `docker-compose.yml` file or by creating a `.env` file in the root of the project.
 
 The order of precedence for environment variables in Docker Compose is as follows:
+
 1. Variables set directly in the `environment` section of `docker-compose.yml`.
 2. Variables passed from your shell environment.
 3. Variables defined in an `env_file` (e.g., `.env`).
@@ -43,7 +44,8 @@ The order of precedence for environment variables in Docker Compose is as follow
 5. If a variable is not defined in any of these places, the application might use hardcoded defaults (as seen in `index.js` for `PORT`, `REDIS_HOST`, `REDIS_PORT`).
 
 Key environment variables:
+
 - `REDIS_HOST`: The hostname or IP address of the Redis server.
 - `REDIS_PORT`: The port number on which the Redis server is listening.
-- `PORT`: The port number for the `bull-scheduler-api` service.
+- `PORT`: The port number for the `bull-scheduler` service.
 - `JOBS_WEBHOOK_URL`: The URL to which job data will be sent upon execution.

@@ -6,7 +6,7 @@ services:
     ports:
       - '6379:6379'
 
-  bull-scheduler-api:
+  bull-scheduler:
     build: .
     ports:
       - '3001:3001'
@@ -16,6 +16,6 @@ services:
       REDIS_HOST: bull-scheduler-redis
       REDIS_PORT: 6379
       PORT: 3001
-      JOBS_WEBHOOK_URL: ""
+      JOBS_WEBHOOK_URL: ''
     env_file:
       - .env
