@@ -1,121 +1,151 @@
 # BullScheduler
 
-A lightweight job scheduling service built with Node.js, Express, and BullMQ. This service allows you to schedule jobs to be executed at specific times or after delays, with jobs being sent to a configured webhook URL when they execute.
+A lightweight job scheduling service built with Node.js, Express, and BullMQ. Schedule jobs to execute at specific times or after delays, with automatic webhook delivery when jobs complete.
 
 ## Features
 
-- **Job Scheduling**: Schedule jobs to run at specific times (`executeAt`) or after a delay (`delayMs`)
-- **Webhook Integration**: Automatically sends job data to a configured webhook URL when jobs execute
-- **Redis-Powered**: Uses Redis and BullMQ for reliable job queuing and processing
-- **Job Monitoring**: Includes Bull Board dashboard accessible at `/admin` for monitoring job status
-- **REST API**: Simple HTTP API for scheduling jobs via POST requests
+- **Flexible Scheduling**: Schedule jobs with specific execution time (`executeAt`) or delay (`delayMs`)
+- **Webhook Delivery**: Automatically POST job data to configured webhook URLs when jobs execute
+- **Per-Job Webhooks**: Override global webhook URL on a per-job basis
+- **Authentication**: Secure API access with Bearer token authentication
+- **Job Monitoring**: Bull Board dashboard at `/admin` with optional basic authentication
+- **Redis-Powered**: Built on Redis and BullMQ for reliable job queuing and processing
+- **Docker Ready**: Easy deployment with Docker Compose
 
-## Quick Start
+## API Usage
 
-1. Set up environment variables:
+### Authentication
 
-   - `REDIS_HOST` - Redis server host (default: localhost)
-   - `REDIS_PORT` - Redis server port (default: 6379)
-   - `JOBS_WEBHOOK_URL` - URL where completed jobs will be sent
-   - `PORT` - API server port (default: 3000)
-
-2. Schedule a job by sending a POST request to `/job`:
-
-   ```json
-   {
-     "name": "example-job",
-     "executeAt": "2024-01-01T12:00:00Z",
-     "data": { "your": "data" }
-   }
-   ```
-
-3. Monitor jobs at `http://localhost:3000/admin`
-
-## Docker Deployment
-
-This project is configured for Docker deployment.
-
-### Building the Image
-
-To build the Docker image for this project, navigate to the project root directory (where the `Dockerfile` is located) and run:
+All requests to `/job` require a Bearer token:
 
 ```bash
-docker build -t bull-scheduler .
+Authorization: Bearer your-secret-token
 ```
 
-(You can replace `bull-scheduler` with your preferred image name.)
+### Schedule a Job
 
-### Running with Docker Compose
+**POST** `/job`
 
-A `docker-compose.yml` file is provided for easy local deployment with Redis.
+```json
+{
+  "name": "my-job",
+  "executeAt": "2024-12-25T12:00:00Z", // OR use "delayMs": 5000
+  "data": {
+    "userId": 123,
+    "action": "send-reminder"
+  },
+  "webhookUrl": "https://your-app.com/webhook" // Optional: overrides global webhook
+}
+```
 
-1.  **Environment Setup:**
-    Ensure you have a `.env` file in the project root. You can copy `.env.example` and modify it:
+**Parameters:**
 
-    ```bash
-    cp .env.example .env
-    ```
+- `name` (string): Job identifier
+- `executeAt` (ISO string): Execute at specific time **OR**
+- `delayMs` (number): Execute after delay in milliseconds
+- `data` (object): **Required** - Job payload to send to webhook
+- `webhookUrl` (string): Optional webhook URL (overrides global `JOBS_WEBHOOK_URL`)
 
-    **Important:** When using `docker-compose`, set `REDIS_HOST` in your `.env` file to `bull-scheduler-redis`. The `PORT` should be `3000`.
+**Response:**
 
-    Example `.env` for Docker Compose:
+```json
+{
+  "message": "Job scheduled with success"
+}
+```
 
-    ```
-    REDIS_HOST=bull-scheduler-redis
-    REDIS_PORT=6379
-    JOBS_WEBHOOK_URL=your_webhook_url_here
-    PORT=3000
-    ```
+### Monitor Jobs
 
-2.  **Start Services:**
-    Run the following command from the project root:
+Access the Bull Board dashboard at `http://localhost:3000/admin` to monitor job status, view completed/failed jobs, and manage queues.
 
-    ```bash
-    docker-compose up -d
-    ```
+## Deployment with Docker Compose
 
-    This will build the API image (if not already built) and start both the `bull-scheduler-api` and `bull-scheduler-redis` services.
+Create a `docker-compose.yml` file in your project:
 
-3.  **Accessing the Application:**
-    - API: `http://localhost:3000`
-    - Bull Board (Admin Interface): `http://localhost:3000/admin`
+```yaml
+version: '3.8'
 
-### Environment Variables
+services:
+  bull-scheduler:
+    image: brorlandi/bullscheduler:latest
+    ports:
+      - '3000:3000'
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JOBS_WEBHOOK_URL=https://your-app.com/webhook
+      - SECRET_TOKEN=your-secure-secret-token
+      - BULL_BOARD_USERNAME=admin
+      - BULL_BOARD_PASSWORD=your-dashboard-password
+    depends_on:
+      - redis
 
-The service is configured using environment variables. These should be defined in a `.env` file in the root of the project. An `.env.example` file is provided as a template.
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
 
-- `REDIS_HOST`: Hostname of the Redis server (defaults to `localhost`).
-- `REDIS_PORT`: Port of the Redis server (defaults to `6379`).
-- `JOBS_WEBHOOK_URL`: The URL to which job data will be POSTed upon execution. This is a required field for jobs to be processed.
-- `PORT`: The port on which the API server will listen (defaults to `3000`).
-- `SECRET_TOKEN`: A secret token used to authenticate requests to the `/job` endpoint. If set, requests to `/job` must include a valid `Authorization: Bearer <token>` header.
-- `BULL_BOARD_USERNAME`: Username for accessing the Bull Dashboard at `/admin`. Defaults to `admin` if not set.
-- `BULL_BOARD_PASSWORD`: Password for accessing the Bull Dashboard. If this variable is not set, the dashboard will not have password protection.
+volumes:
+  redis_data:
+```
 
+Start the services:
 
-While `docker-compose.yml` uses an `.env` file for convenience in local development, for production deployments, you should inject these environment variables directly into the container. Do not bundle your production `.env` file within the Docker image.
+```bash
+docker-compose up -d
+```
 
-### Publishing to Docker Hub (Optional)
+Access the service:
 
-Once you have built your image, you can publish it to Docker Hub or any other Docker registry.
+- **API**: `http://localhost:3000`
+- **Dashboard**: `http://localhost:3000/admin`
 
-1.  **Tag your image:**
+## Environment Variables
 
-    ```bash
-    docker tag bull-scheduler your-dockerhub-username/your-repository-name:latest
-    ```
+| Variable              | Description                              | Default     | Required |
+| --------------------- | ---------------------------------------- | ----------- | -------- |
+| `REDIS_HOST`          | Redis server hostname                    | `localhost` | No       |
+| `REDIS_PORT`          | Redis server port                        | `6379`      | No       |
+| `JOBS_WEBHOOK_URL`    | Default webhook URL for job execution    | -           | Yes\*    |
+| `SECRET_TOKEN`        | Bearer token for API authentication      | `secret`    | Yes      |
+| `PORT`                | API server port                          | `3000`      | No       |
+| `BULL_BOARD_USERNAME` | Dashboard username                       | `admin`     | No       |
+| `BULL_BOARD_PASSWORD` | Dashboard password (enables auth if set) | -           | No       |
 
-    (Replace `bull-scheduler` with the name you used during the build, `your-dockerhub-username`, `your-repository-name`, and `latest` with your desired tag.)
+\*Required unless you provide `webhookUrl` in each job request.
 
-2.  **Log in to Docker Hub:**
+## Example Usage
 
-    ```bash
-    docker login
-    ```
+```bash
+# Schedule a job to execute in 30 seconds
+curl -X POST http://localhost:3000/job \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-token" \
+  -d '{
+    "name": "reminder-job",
+    "delayMs": 30000,
+    "data": {
+      "userId": 123,
+      "message": "Don't forget your appointment!"
+    }
+  }'
 
-    (Enter your Docker Hub credentials when prompted.)
+# Schedule a job for a specific time
+curl -X POST http://localhost:3000/job \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-token" \
+  -d '{
+    "name": "birthday-reminder",
+    "executeAt": "2024-12-25T09:00:00Z",
+    "data": {
+      "userId": 456,
+      "type": "birthday",
+      "message": "Happy Birthday!"
+    },
+    "webhookUrl": "https://notifications.example.com/webhook"
+  }'
+```
 
-3.  **Push the image:**
-    ```bash
-    docker push your-dockerhub-username/your-repository-name:latest
-    ```
+When jobs execute, the `data` object will be POSTed to the configured webhook URL.

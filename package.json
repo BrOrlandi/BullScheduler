@@ -1,7 +1,7 @@
 {
   "name": "BullScheduler",
   "version": "1.0.0",
-  "description": "",
+  "description": "A lightweight job scheduling service built with Node.js, Express, and BullMQ. This service allows you to schedule jobs to be executed at specific times or after delays, with jobs being sent to a configured webhook URL when they execute.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
