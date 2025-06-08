@@ -17,9 +17,9 @@ app.use(bodyParser.json());
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
 const REDIS_PORT = process.env.REDIS_PORT || '6379';
 const JOBS_WEBHOOK_URL = process.env.JOBS_WEBHOOK_URL;
-const SECRET_TOKEN = process.env.SECRET_TOKEN;
+const SECRET_TOKEN = process.env.SECRET_TOKEN || 'secret';
 const BULL_BOARD_USERNAME = process.env.BULL_BOARD_USERNAME || 'admin';
-const BULL_BOARD_PASSWORD = process.env.BULL_BOARD_PASSWORD;
+const BULL_BOARD_PASSWORD = process.env.BULL_BOARD_PASSWORD || 'admin';
 
 const queueName = 'bull-scheduler-jobs';
 
@@ -104,11 +104,14 @@ const router = createBullBoard({
 });
 
 if (BULL_BOARD_PASSWORD) {
-  app.use('/admin', basicAuth({
-    users: { [BULL_BOARD_USERNAME]: BULL_BOARD_PASSWORD },
-    challenge: true,
-    realm: 'Bull Dashboard',
-  }));
+  app.use(
+    '/admin',
+    basicAuth({
+      users: { [BULL_BOARD_USERNAME]: BULL_BOARD_PASSWORD },
+      challenge: true,
+      realm: 'Bull Dashboard',
+    })
+  );
 }
 
 serverAdapter.setBasePath('/admin');
