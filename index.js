@@ -7,6 +7,7 @@ const dotenv = require('dotenv');
 const { createBullBoard } = require('@bull-board/api');
 const { BullMQAdapter } = require('@bull-board/api/bullMQAdapter');
 const { ExpressAdapter } = require('@bull-board/express');
+const basicAuth = require('express-basic-auth');
 
 dotenv.config();
 
@@ -16,6 +17,9 @@ app.use(bodyParser.json());
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
 const REDIS_PORT = process.env.REDIS_PORT || '6379';
 const JOBS_WEBHOOK_URL = process.env.JOBS_WEBHOOK_URL;
+const SECRET_TOKEN = process.env.SECRET_TOKEN;
+const BULL_BOARD_USERNAME = process.env.BULL_BOARD_USERNAME || 'admin';
+const BULL_BOARD_PASSWORD = process.env.BULL_BOARD_PASSWORD;
 
 const queueName = 'bull-scheduler-jobs';
 
@@ -27,7 +31,18 @@ const redisConnection = new IORedis({
 
 const queue = new Queue(queueName, { connection: redisConnection });
 
-app.post('/job', async (req, res) => {
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    if (token === SECRET_TOKEN) {
+      return next();
+    }
+  }
+  return res.status(401).json({ error: 'Unauthorized' });
+};
+
+app.post('/job', authenticateToken, async (req, res) => {
   const { name, executeAt, delayMs, data } = req.body;
 
   if (!data) return res.status(400).json({ error: 'Missing data' });
@@ -87,6 +102,14 @@ const router = createBullBoard({
   queues: [new BullMQAdapter(queue)],
   serverAdapter: serverAdapter,
 });
+
+if (BULL_BOARD_PASSWORD) {
+  app.use('/admin', basicAuth({
+    users: { [BULL_BOARD_USERNAME]: BULL_BOARD_PASSWORD },
+    challenge: true,
+    realm: 'Bull Dashboard',
+  }));
+}
 
 serverAdapter.setBasePath('/admin');
 app.use('/admin', serverAdapter.getRouter());

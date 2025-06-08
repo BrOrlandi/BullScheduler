@@ -80,14 +80,18 @@ A `docker-compose.yml` file is provided for easy local deployment with Redis.
     - API: `http://localhost:3000`
     - Bull Board (Admin Interface): `http://localhost:3000/admin`
 
-### Environment Variables in Docker
+### Environment Variables
 
-The application is configured via environment variables:
+The service is configured using environment variables. These should be defined in a `.env` file in the root of the project. An `.env.example` file is provided as a template.
 
-- `REDIS_HOST`: Hostname of the Redis server. (Default for compose: `bull-scheduler-redis`)
-- `REDIS_PORT`: Port of the Redis server. (Default: `6379`)
-- `JOBS_WEBHOOK_URL`: The URL where job data will be sent upon completion.
-- `PORT`: The port on which the application server will listen. (Default: `3000`)
+- `REDIS_HOST`: Hostname of the Redis server (defaults to `localhost`).
+- `REDIS_PORT`: Port of the Redis server (defaults to `6379`).
+- `JOBS_WEBHOOK_URL`: The URL to which job data will be POSTed upon execution. This is a required field for jobs to be processed.
+- `PORT`: The port on which the API server will listen (defaults to `3000`).
+- `SECRET_TOKEN`: A secret token used to authenticate requests to the `/job` endpoint. If set, requests to `/job` must include a valid `Authorization: Bearer <token>` header.
+- `BULL_BOARD_USERNAME`: Username for accessing the Bull Dashboard at `/admin`. Defaults to `admin` if not set.
+- `BULL_BOARD_PASSWORD`: Password for accessing the Bull Dashboard. If this variable is not set, the dashboard will not have password protection.
+
 
 While `docker-compose.yml` uses an `.env` file for convenience in local development, for production deployments, you should inject these environment variables directly into the container. Do not bundle your production `.env` file within the Docker image.
 
