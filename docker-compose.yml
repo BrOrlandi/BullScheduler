@@ -6,11 +6,18 @@ services:
     ports:
       - '6379:6379'
 
-  bull-scheduler-api:
+  bull-scheduler:
     build: .
     ports:
-      - '3001:3001'
+      - '3000:3000'
     depends_on:
       - bull-scheduler-redis
+    environment:
+      REDIS_HOST: bull-scheduler-redis
+      REDIS_PORT: 6379
+      JOBS_WEBHOOK_URL: 'http://your-webhook-url.com'
+      BULL_BOARD_USERNAME: admin
+      BULL_BOARD_PASSWORD: admin
+      SECRET_TOKEN: 'your-secret-token'
     env_file:
       - .env
