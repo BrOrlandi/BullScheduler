@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js",
-    "test": "jest"
+    "dev": "nodemon index.js"
   },
   "keywords": [],
   "author": "",
@@ -25,8 +24,5 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
-  },
-  "devDependencies": {
-    "jest": "^29.7.0"
   }
 }
