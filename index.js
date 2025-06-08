@@ -74,6 +74,14 @@ app.post('/job', authenticateToken, async (req, res) => {
   }
 });
 
+app.get('/verify-auth', authenticateToken, (req, res) => {
+  return res.json({
+    success: true,
+    message: 'Authentication successful',
+    authenticated: true,
+  });
+});
+
 const worker = new Worker(
   queueName,
   async (job) => {
